@@ -1,20 +1,8 @@
-from typing import AbstractSet, List, NewType, Sequence, Set, TypeVar
+from typing import List, NewType, TypeVar
 
 from pytest import mark
 
-from src.types import iterable_type, type_name
-
-
-@mark.parametrize("cls, expected", [
-    (List[str], list),
-    (Sequence[str], tuple),
-    (AbstractSet[str], frozenset),
-    (Set[str], set),
-])
-def test_iterable_type(cls, expected):
-    # noinspection PyUnresolvedReferences
-    assert iterable_type(cls.__origin__) == expected
-
+from src.types import type_name
 
 T = TypeVar("T")
 

@@ -6,7 +6,7 @@ from typing import (Any, Generic, Iterable, Mapping, Sequence, Tuple, Type,
 
 from src import Unsupported
 from src.types import (ITERABLE_TYPES, MAPPING_TYPES, PRIMITIVE_TYPES,
-                       Primitive, iterable_type)
+                       Primitive)
 
 try:
     from typing_extensions import Literal
@@ -49,10 +49,14 @@ class Visitor(Generic[ReturnType, Context]):
     def literal(self, values: Sequence[Any], ctx: Context) -> ReturnType:
         raise NotImplementedError()
 
-    def is_custom(self, cls: Type, ctx: Context):
-        raise NotImplementedError()
+    def is_custom(self, cls: Type, ctx: Context) -> Any:
+        """
+        `Visitor.custom` will be called with the result of this method
+        if it returns a truthy value
+        """
+        return False
 
-    def custom(self, cls: Type, ctx: Context) -> ReturnType:
+    def custom(self, custom: Any, ctx: Context) -> ReturnType:
         raise NotImplementedError()
 
     def dataclass(self, cls: Type, ctx: Context) -> ReturnType:
@@ -65,6 +69,7 @@ class Visitor(Generic[ReturnType, Context]):
         raise NotImplementedError()
 
     def visit(self, cls: Type, ctx: Context) -> ReturnType:
+        # 'Optimization' for more current types
         if cls in PRIMITIVE_TYPES:
             return self.primitive(cast(Primitive, cls), ctx)
         if hasattr(cls, "__origin__"):
@@ -76,18 +81,14 @@ class Visitor(Generic[ReturnType, Context]):
                     return self.optional(args[0], ctx)
                 else:
                     return self.union(args, ctx)
-            if origin in ITERABLE_TYPES:
-                # noinspection PyTypeChecker
-                return self.iterable(iterable_type(origin), args[0], ctx)
-            if origin in MAPPING_TYPES:
-                return self.mapping(args[0], args[1], ctx)
-            if origin is tuple:
-                if len(args) == 2 and args[1] is ...:
-                    return self.iterable(tuple, args[0], ctx)
-                else:
-                    return self.tuple(args, ctx)
             if Literal is not None and origin is Literal:
                 return self.literal(args, ctx)
+            if origin is tuple and (not len(args) == 2 or args[1] is not ...):
+                return self.tuple(args, ctx)
+            if origin in ITERABLE_TYPES:
+                return self.iterable(ITERABLE_TYPES[origin], args[0], ctx)
+            if origin in MAPPING_TYPES:
+                return self.mapping(args[0], args[1], ctx)
             try:
                 generics_items = zip((p for p in origin.__parameters__), args)
             except AttributeError:
@@ -100,19 +101,22 @@ class Visitor(Generic[ReturnType, Context]):
             res = self.visit(origin, ctx)
             self._generics = generics_save
             return res
+        # customs are handled before other classes
+        # (dataclass could has to handled as custom for example)
+        custom = self.is_custom(cls, ctx)
+        if custom:
+            return self.custom(custom, ctx)
+        if is_dataclass(cls):
+            return self.dataclass(cls, ctx)
+        if isinstance(cls, TypeVar):  # type: ignore
+            if cls not in self._generics:
+                return self.unsupported(cls, ctx)
+            return self.visit(self._generics[cls], ctx)
         try:
-            # customs are handled before other classes
-            # (dataclass could has to handled as custom for example)
-            if self.is_custom(cls, ctx):
-                return self.custom(cls, ctx)
-            if is_dataclass(cls):
-                return self.dataclass(cls, ctx)
             if issubclass(cls, Enum):
                 # noinspection PyTypeChecker
                 return self.enum(cls, ctx)
         except TypeError:
-            # because 'issubclass' can fail (with NewType/etc.)
-            # classes are handled before because more common
             pass
         if cls is Any:
             return self.any(ctx)
@@ -122,8 +126,4 @@ class Visitor(Generic[ReturnType, Context]):
                 return self.visit(cls.__supertype__, ctx)
             else:
                 return self.unsupported(cls, ctx)
-        if isinstance(cls, TypeVar):  # type: ignore
-            if cls not in self._generics:
-                return self.unsupported(cls, ctx)
-            return self.visit(self._generics[cls], ctx)
         return self.unsupported(cls, ctx)

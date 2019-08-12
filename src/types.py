@@ -1,27 +1,21 @@
 import collections.abc
-from typing import Type, Union
+from typing import Iterable, Mapping, Type, Union
 
 PRIMITIVE_TYPES = (str, int, bool, float)
 
 Primitive = Type[Union[str, int, bool, float]]
 
-ITERABLE_TYPES = (collections.abc.Sequence, list,
-                  collections.abc.Set, set)
+ITERABLE_TYPES: Mapping[Type[Iterable], Type[Iterable]] = {
+    collections.abc.Iterable:   tuple,
+    collections.abc.Collection: tuple,
+    collections.abc.Sequence:   tuple,
+    tuple:                      tuple,
+    list:                       list,
+    collections.abc.Set:        frozenset,
+    set:                        set
+}
 
 MAPPING_TYPES = (collections.abc.Mapping, dict)
-
-
-def iterable_type(cls: Type) -> Type:
-    assert issubclass(cls, collections.abc.Iterable)
-    if cls is list:
-        return list
-    if cls is collections.abc.Sequence:
-        return tuple
-    if cls is set:
-        return set
-    if cls is collections.abc.Set:
-        return frozenset
-    raise NotImplementedError()
 
 
 def type_name(cls: Type) -> str:

@@ -1,6 +1,6 @@
 from typing import Type
 
-from src import type_name
+from src.types import type_name
 
 UNSUPPORTED_TYPE = "Unsupported '{type_name}' type"
 

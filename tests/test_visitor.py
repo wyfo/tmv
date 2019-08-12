@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import (AbstractSet, Any, Dict, Generic, Iterable, List, Mapping,
-                    NewType, Optional, Sequence, Set, Tuple, TypeVar, Union)
+                    NewType, Optional, Sequence, Set, Sized, Tuple, TypeVar,
+                    Union)
 from unittest.mock import Mock
 
 from pytest import mark, raises
@@ -37,14 +38,15 @@ def func():
 @mark.parametrize("cls, method, args", [
     (int, Visitor.primitive, (int,)),
     (str, Visitor.primitive, (str,)),
+    (Tuple[str, int], Visitor.tuple, ((str, int),)),
     (List[int], Visitor.iterable, (list, int)),
+    (Tuple[str, ...], Visitor.iterable, (tuple, str)),
     (Sequence[int], Visitor.iterable, (tuple, int)),
     (AbstractSet[int], Visitor.iterable, (frozenset, int)),
+    (Iterable[int], Visitor.iterable, (tuple, int)),
     (Set[int], Visitor.iterable, (set, int)),
     (Mapping[str, int], Visitor.mapping, (str, int)),
     (Dict[str, int], Visitor.mapping, (str, int)),
-    (Tuple[str, ...], Visitor.iterable, (tuple, str)),
-    (Tuple[str, int], Visitor.tuple, ((str, int),)),
     (EnumExample, Visitor.enum, (EnumExample,)),
     (Literal[1, 2], Visitor.literal, ((1, 2),)),
     (Optional[int], Visitor.optional, (int,)),
@@ -53,10 +55,10 @@ def func():
     (DataclassExample, Visitor.dataclass, (DataclassExample,)),
     (GenericExample[int], Visitor.visit, (GenericExample,)),
     (NewType("int2", int), Visitor.visit, (int,)),
-    (Iterable[str], Visitor.unsupported, (Iterable[str],)),
     (Generic, Visitor.unsupported, (Generic,)),
     (0, Visitor.unsupported, (0,)),
     (func, Visitor.unsupported, (func,)),
+    (Sized, Visitor.unsupported, (Sized,)),
 ])
 def test_native_types(cls, method, args):
     visitor = Mock()
@@ -97,8 +99,8 @@ class Custom:
 
 
 @mark.parametrize("is_custom, method", [
-    (False, Visitor.unsupported),
-    (True, Visitor.custom),
+    (None, Visitor.unsupported),
+    (Custom, Visitor.custom),
 ])
 def test_custom_types(is_custom, method):
     visitor = Mock()
@@ -112,3 +114,7 @@ def test_unsupported():
     error = UNSUPPORTED_TYPE.format(type_name="Iterable")
     with raises(Unsupported, match=error):
         Visitor.unsupported(Mock(), Iterable[str], None)
+
+
+def test_default_is_custom():
+    assert Visitor.is_custom(Mock(), Mock(), Mock()) is False
