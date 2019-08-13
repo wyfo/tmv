@@ -4,8 +4,8 @@ from types import FunctionType
 from typing import (Any, Generic, Iterable, Mapping, Sequence, Tuple, Type,
                     TypeVar, Union, cast)
 
-from src import Unsupported
-from src.types import (ITERABLE_TYPES, MAPPING_TYPES, PRIMITIVE_TYPES,
+from tmv import Unsupported
+from tmv.types import (ITERABLE_TYPES, MAPPING_TYPES, PRIMITIVE_TYPES,
                        Primitive)
 
 try:
@@ -43,7 +43,7 @@ class Visitor(Generic[ReturnType, Context]):
                 ctx: Context) -> ReturnType:
         raise NotImplementedError()
 
-    def tuple(self, types: Sequence[Type], ctx: Type):
+    def tuple(self, types: Sequence[Type], ctx: Context):
         raise NotImplementedError()
 
     def literal(self, values: Sequence[Any], ctx: Context) -> ReturnType:
@@ -86,6 +86,7 @@ class Visitor(Generic[ReturnType, Context]):
             if origin is tuple and (not len(args) == 2 or args[1] is not ...):
                 return self.tuple(args, ctx)
             if origin in ITERABLE_TYPES:
+                # noinspection PyTypeChecker
                 return self.iterable(ITERABLE_TYPES[origin], args[0], ctx)
             if origin in MAPPING_TYPES:
                 return self.mapping(args[0], args[1], ctx)

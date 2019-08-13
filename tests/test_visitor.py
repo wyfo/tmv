@@ -8,8 +8,8 @@ from unittest.mock import Mock
 from pytest import mark, raises
 from typing_extensions import Literal
 
-from src.errors import UNSUPPORTED_TYPE, Unsupported
-from src.visitor import Visitor
+from tmv.errors import UNSUPPORTED_TYPE, Unsupported
+from tmv.visitor import Visitor
 
 
 class EnumExample(Enum):

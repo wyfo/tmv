@@ -2,7 +2,7 @@ from typing import List, NewType, TypeVar
 
 from pytest import mark
 
-from src.types import type_name
+from tmv.types import type_name
 
 T = TypeVar("T")
 
