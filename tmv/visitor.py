@@ -2,7 +2,7 @@ from dataclasses import is_dataclass
 from enum import Enum
 from types import FunctionType
 from typing import (Any, Generic, Iterable, Mapping, Sequence, Tuple, Type,
-                    TypeVar, Union, cast)
+                    TypeVar, Union)
 
 from tmv import Unsupported
 from tmv.types import (ITERABLE_TYPES, MAPPING_TYPES, PRIMITIVE_TYPES,
@@ -71,7 +71,8 @@ class Visitor(Generic[ReturnType, Context]):
     def visit(self, cls: Type, ctx: Context) -> ReturnType:
         # 'Optimization' for more current types
         if cls in PRIMITIVE_TYPES:
-            return self.primitive(cast(Primitive, cls), ctx)
+            # noinspection PyTypeChecker
+            return self.primitive(cls, ctx)
         if hasattr(cls, "__origin__"):
             origin = cls.__origin__  # type: ignore
             # noinspection PyUnresolvedReferences

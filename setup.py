@@ -11,7 +11,7 @@ setup(
     description="Type Model Visitor",
     long_description=README,
     long_description_content_type="text/markdown",
-    version='0.1.2',
+    version='0.1.3',
     packages=find_packages(include=["tmv"]),
     install_requires=[],
     python_requires=">=3.6",
