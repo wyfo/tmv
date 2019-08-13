@@ -4,7 +4,7 @@ with open("README.md") as f:
     README = f.read()
 
 setup(
-    name='TMV',
+    name='tmv',
     url="https://github.com/wyfo/apischema",
     author="Joseph Perez",
     author_email="joperez@hotmail.fr",
